@@ -25,13 +25,13 @@ This project demonstrates the integration of OCR technology with a Flask web app
 
 The application accepts an image containing printed or scanned text.
 
-![Original image used for OCR](screenshots/ocr-input.jpg)
+![Original image used for OCR](Screenshot/ocr-input.jpg)
 
 ### OCR Output
 
 The application displays the recognized text and the confidence score returned by the OCR pipeline.
 
-![OCR output displayed by the web application](screenshots/ocr-output.png)
+![OCR output displayed by the web application](Screenshot/ocr-output.png)
 
 ## Technologies Used
 
