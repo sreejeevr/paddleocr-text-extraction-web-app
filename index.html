@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>AI OCR Studio</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+
+<div class="container">
+
+    <!-- HEADER -->
+    <header>
+        <h1>AI OCR Studio</h1>
+        <p>Extract text from images and camera captures using AI-powered OCR</p>
+    </header>
+
+
+    <!-- ERROR -->
+    {% if error %}
+    <div class="error-box">
+        {{ error }}
+    </div>
+    {% endif %}
+
+
+    <!-- TABS -->
+    <div class="tabs">
+
+        <button class="tab-button active"
+                id="upload-tab"
+                type="button"
+                onclick="showTab('upload')">
+            🖼️ Image OCR
+        </button>
+
+        <button class="tab-button"
+                id="camera-tab"
+                type="button"
+                onclick="showTab('camera')">
+            📷 Camera OCR
+        </button>
+
+    </div>
+
+
+    <!-- ================= IMAGE OCR ================= -->
+
+    <div class="tab-content active" id="upload">
+
+        <div class="card">
+
+            <h2>Upload Image</h2>
+
+            <p class="description">
+                Select an image and extract all readable text using AI OCR.
+            </p>
+
+            <form action="/ocr"
+                  method="POST"
+                  enctype="multipart/form-data"
+                  id="upload-form">
+
+                <div class="upload-area">
+
+                    <input type="file"
+                           name="image"
+                           id="image"
+                           accept=".jpg,.jpeg,.png,.bmp,.webp"
+                           required>
+
+                    <label for="image">
+
+                        <span class="upload-icon">📁</span>
+
+                        <span class="upload-title">
+                            Choose an Image
+                        </span>
+
+                        <small>
+                            JPG, JPEG, PNG, BMP, WEBP
+                        </small>
+
+                    </label>
+
+                </div>
+
+                <button type="submit"
+                        class="primary-button">
+                    ✨ Extract Text
+                </button>
+
+            </form>
+
+        </div>
+
+    </div>
+
+
+    <!-- ================= CAMERA OCR ================= -->
+
+    <div class="tab-content" id="camera">
+
+        <div class="card">
+
+            <h2>Camera OCR</h2>
+
+            <p class="description">
+                Start your camera, capture a photo, preview it, and extract text.
+            </p>
+
+            <div class="camera-container">
+
+                <!-- CAMERA BOX -->
+                <div class="camera-preview"
+                     id="camera-preview">
+
+                    <video id="video"
+                           autoplay
+                           playsinline>
+                    </video>
+
+                    <div class="camera-placeholder"
+                         id="camera-placeholder">
+                        📷 Camera is off
+                    </div>
+
+                </div>
+
+
+                <!-- CAPTURED IMAGE PREVIEW -->
+                <div class="captured-preview"
+                     id="captured-preview">
+
+                    <h3>Captured Image Preview</h3>
+
+                    <img id="captured-image"
+                         src=""
+                         alt="Captured image preview">
+
+                </div>
+
+
+                <!-- PROCESSING BAR -->
+                <div class="processing-container"
+                     id="processing-container">
+
+                    <p>
+                        🤖 Processing image with AI OCR...
+                    </p>
+
+                    <div class="progress-bar">
+
+                        <div class="progress-fill">
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- HIDDEN CANVAS -->
+                <canvas id="canvas"
+                        style="display: none;">
+                </canvas>
+
+
+                <!-- CAMERA BUTTONS -->
+                <div class="camera-buttons">
+
+                    <button type="button"
+                            class="secondary-button"
+                            id="start-camera">
+                        📷 Start Camera
+                    </button>
+
+                    <button type="button"
+                            class="stop-button"
+                            id="stop-camera">
+                        🛑 Stop Camera
+                    </button>
+
+                    <button type="button"
+                            class="primary-button"
+                            id="capture-image">
+                        📸 Capture & Extract
+                    </button>
+
+                </div>
+
+
+                <!-- HIDDEN FORM -->
+                <form id="camera-form"
+                      action="/ocr"
+                      method="POST"
+                      enctype="multipart/form-data">
+
+                    <input type="file"
+                           id="camera-image"
+                           name="image"
+                           style="display: none;">
+
+                </form>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- ================= OCR RESULT ================= -->
+
+    {% if text %}
+
+    <div class="result-card">
+
+        <div class="result-header">
+
+            <h2>Extracted Text</h2>
+
+            <div class="confidence">
+                🎯 Confidence:
+                <strong>{{ confidence }}%</strong>
+            </div>
+
+        </div>
+
+
+        <textarea id="extracted-text"
+                  class="result-text"
+                  spellcheck="false">{{ text }}</textarea>
+
+
+        <div class="action-buttons">
+
+            <!-- COPY TEXT -->
+            <button type="button"
+                    class="secondary-button"
+                    onclick="copyText()">
+                📋 Copy Text
+            </button>
+
+
+            <!-- DOWNLOAD TXT -->
+            <form action="/download-txt"
+                  method="POST"
+                  class="download-form">
+
+                <input type="hidden"
+                       name="text"
+                       id="txt-input">
+
+                <button type="submit"
+                        class="secondary-button">
+                    📝 Download TXT
+                </button>
+
+            </form>
+
+
+            <!-- DOWNLOAD WORD -->
+            <form action="/download-word"
+                  method="POST"
+                  class="download-form">
+
+                <input type="hidden"
+                       name="text"
+                       id="word-input">
+
+                <button type="submit"
+                        class="word-button">
+                    📄 Download Word
+                </button>
+
+            </form>
+
+
+            <!-- DOWNLOAD PDF -->
+            <form action="/download-pdf"
+                  method="POST"
+                  class="download-form">
+
+                <input type="hidden"
+                       name="text"
+                       id="pdf-input">
+
+                <button type="submit"
+                        class="pdf-button">
+                    📕 Download PDF
+                </button>
+
+            </form>
+
+        </div>
+
+    </div>
+
+    {% endif %}
+
+</div>
+
+
+<script>
+
+/* =========================================
+   TAB SWITCHING
+========================================= */
+
+function showTab(tabName) {
+
+    document.querySelectorAll(".tab-content")
+        .forEach(function(tab) {
+            tab.classList.remove("active");
+        });
+
+    document.querySelectorAll(".tab-button")
+        .forEach(function(button) {
+            button.classList.remove("active");
+        });
+
+    document.getElementById(tabName)
+        .classList.add("active");
+
+    document.getElementById(tabName + "-tab")
+        .classList.add("active");
+
+
+    /* Stop camera when switching to Image OCR */
+
+    if (tabName === "upload") {
+        stopCamera();
+    }
+
+}
+
+
+/* =========================================
+   COPY TEXT
+========================================= */
+
+function copyText() {
+
+    const textArea =
+        document.getElementById("extracted-text");
+
+    if (!textArea) return;
+
+    navigator.clipboard
+        .writeText(textArea.value)
+        .then(function() {
+            alert("Text copied successfully!");
+        })
+        .catch(function() {
+            alert("Unable to copy text.");
+        });
+
+}
+
+
+/* =========================================
+   UPDATE DOWNLOAD TEXT
+========================================= */
+
+function updateDownloadText() {
+
+    const textArea =
+        document.getElementById("extracted-text");
+
+    if (!textArea) return;
+
+    const text = textArea.value;
+
+    const txtInput =
+        document.getElementById("txt-input");
+
+    const wordInput =
+        document.getElementById("word-input");
+
+    const pdfInput =
+        document.getElementById("pdf-input");
+
+    if (txtInput) txtInput.value = text;
+    if (wordInput) wordInput.value = text;
+    if (pdfInput) pdfInput.value = text;
+
+}
+
+
+document.querySelectorAll(".download-form")
+    .forEach(function(form) {
+
+        form.addEventListener(
+            "submit",
+            updateDownloadText
+        );
+
+    });
+
+
+/* =========================================
+   CAMERA OCR
+========================================= */
+
+let stream = null;
+
+const video =
+    document.getElementById("video");
+
+const canvas =
+    document.getElementById("canvas");
+
+const preview =
+    document.getElementById("camera-preview");
+
+const placeholder =
+    document.getElementById("camera-placeholder");
+
+const capturedPreview =
+    document.getElementById("captured-preview");
+
+const capturedImage =
+    document.getElementById("captured-image");
+
+const processingContainer =
+    document.getElementById("processing-container");
+
+
+/* START CAMERA */
+
+document.getElementById("start-camera")
+    .addEventListener("click", async function() {
+
+        try {
+
+            /* If already running, do nothing */
+
+            if (stream) {
+                return;
+            }
+
+            stream =
+                await navigator.mediaDevices.getUserMedia({
+
+                    video: {
+                        facingMode: "environment"
+                    },
+
+                    audio: false
+
+                });
+
+
+            video.srcObject = stream;
+
+            await video.play();
+
+            placeholder.style.display = "none";
+
+        }
+
+        catch (error) {
+
+            console.error(error);
+
+            alert(
+                "Unable to access the camera. Please allow camera permission."
+            );
+
+        }
+
+    });
+
+
+/* STOP CAMERA */
+
+function stopCamera() {
+
+    if (stream) {
+
+        stream.getTracks()
+            .forEach(function(track) {
+                track.stop();
+            });
+
+        stream = null;
+
+    }
+
+    if (video) {
+        video.srcObject = null;
+    }
+
+    if (placeholder) {
+        placeholder.style.display = "block";
+    }
+
+}
+
+
+document.getElementById("stop-camera")
+    .addEventListener("click", function() {
+
+        stopCamera();
+
+    });
+
+
+/* CAPTURE IMAGE */
+
+document.getElementById("capture-image")
+    .addEventListener("click", function() {
+
+        if (!stream) {
+
+            alert("Please click Start Camera first.");
+
+            return;
+
+        }
+
+        /* Check camera is ready */
+
+        if (
+            video.videoWidth === 0 ||
+            video.videoHeight === 0
+        ) {
+
+            alert("Camera is loading. Please wait a moment.");
+
+            return;
+
+        }
+
+
+        canvas.width =
+            video.videoWidth;
+
+        canvas.height =
+            video.videoHeight;
+
+
+        const context =
+            canvas.getContext("2d");
+
+
+        context.drawImage(
+
+            video,
+
+            0,
+
+            0,
+
+            canvas.width,
+
+            canvas.height
+
+        );
+
+
+        canvas.toBlob(
+
+            function(blob) {
+
+                if (!blob) {
+
+                    alert(
+                        "Unable to capture image."
+                    );
+
+                    return;
+
+                }
+
+
+                /* SHOW CAPTURED IMAGE */
+
+                const imageURL =
+                    URL.createObjectURL(blob);
+
+
+                capturedImage.src =
+                    imageURL;
+
+
+                capturedPreview
+                    .classList
+                    .add("show");
+
+
+                /* SHOW PROCESSING BAR */
+
+                processingContainer
+                    .classList
+                    .add("show");
+
+
+                /* CREATE FILE */
+
+                const file =
+                    new File(
+
+                        [blob],
+
+                        "camera_capture.jpg",
+
+                        {
+                            type: "image/jpeg"
+                        }
+
+                    );
+
+
+                const dataTransfer =
+                    new DataTransfer();
+
+
+                dataTransfer.items
+                    .add(file);
+
+
+                document
+                    .getElementById("camera-image")
+                    .files =
+                    dataTransfer.files;
+
+
+                /* STOP CAMERA AFTER CAPTURE */
+
+                stopCamera();
+
+
+                /* WAIT SO PREVIEW + BAR ARE VISIBLE */
+
+                setTimeout(function() {
+
+                    document
+                        .getElementById("camera-form")
+                        .submit();
+
+                }, 1200);
+
+            },
+
+            "image/jpeg",
+
+            0.95
+
+        );
+
+    });
+
+</script>
+
+</body>
+</html>
